@@ -2,27 +2,20 @@
 
 ## Overview
 
-Stock Intelligence Platform is an AI-powered financial dashboard that helps investors analyze global stocks using real-time Yahoo Finance data.
+Stock Intelligence Platform is an AI-powered financial dashboard that helps retail investors analyze global stocks using real-time Yahoo Finance data.
 
-## Features
+### Features
 
-✅ Live stock price tracking
+- Live stock tracking
+- Market capitalization analysis
+- 52-week high & low tracking
+- Risk assessment engine
+- Stock health scoring
+- AI-generated investment insights
+- Interactive stock comparison
+- Historical price visualization
 
-✅ Market capitalization analysis
-
-✅ 52-week high and low tracking
-
-✅ Risk assessment
-
-✅ Stock health scoring
-
-✅ AI-generated investment insights
-
-✅ Interactive stock comparison
-
-✅ Historical stock charts
-
-## Tech Stack
+### Tech Stack
 
 - Python
 - Streamlit
@@ -30,14 +23,15 @@ Stock Intelligence Platform is an AI-powered financial dashboard that helps inve
 - Plotly
 - Pandas
 
-## Live Demo
+### Live Demo
 
-[Streamlit App](https://je9emjecnfufvn7pydwpxa.streamlit.app/)
+Your Streamlit URL here
 
-## Screenshots
+### Dashboard Preview
 
-(Add screenshots here)
+![Dashboard](Screenshot%202026-07-05%20181549.png)
 
-## Author
+### Author
 
 Vini Lunia
+B.Sc. Data Science
