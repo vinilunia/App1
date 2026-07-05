@@ -52,6 +52,16 @@ try:
     high_52 = info.get("fiftyTwoWeekHigh", "N/A")
     low_52 = info.get("fiftyTwoWeekLow", "N/A")
 
+    def format_market_cap(value):
+    if isinstance(value, (int, float)):
+        if value >= 1_000_000_000_000:
+            return f"${value/1_000_000_000_000:.2f}T"
+        elif value >= 1_000_000_000:
+            return f"${value/1_000_000_000:.2f}B"
+        elif value >= 1_000_000:
+            return f"${value/1_000_000:.2f}M"
+    return value
+
     st.subheader(f"{info.get('longName', ticker_input)}")
 
     col1, col2, col3, col4 = st.columns(4)
@@ -62,9 +72,9 @@ try:
     )
 
     col2.metric(
-        "Market Cap",
-        f"{market_cap:,}" if isinstance(market_cap, int) else market_cap
-    )
+    "Market Cap",
+    format_market_cap(market_cap)
+)
 
     col3.metric(
         "52W High",
