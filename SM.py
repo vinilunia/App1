@@ -1,8 +1,10 @@
 import streamlit as st
 import yfinance as yf
 import plotly.express as px
-import pandas as pd
 
+# ------------------------
+# Page Config
+# ------------------------
 st.set_page_config(
     page_title="Stock Intelligence Platform",
     page_icon="📈",
@@ -53,11 +55,6 @@ compare_stock = st.sidebar.selectbox(
     ["None", "AAPL", "MSFT", "NVDA", "AMZN", "TSLA", "META"]
 )
 
-compare_stock = st.sidebar.selectbox(
-    "Compare With",
-    ["None", "AAPL", "MSFT", "NVDA", "AMZN", "TSLA", "META"]
-)
-
 # ------------------------
 # Helper Functions
 # ------------------------
@@ -87,10 +84,15 @@ def calculate_risk(hist):
 # Main App
 # ------------------------
 try:
+
     stock = yf.Ticker(ticker_input)
 
     info = stock.info
     hist = stock.history(period=period)
+
+    if hist.empty:
+        st.error("No stock data found.")
+        st.stop()
 
     current_price = info.get("currentPrice", "N/A")
     market_cap = info.get("marketCap", "N/A")
@@ -110,7 +112,9 @@ try:
     else:
         daily_change = 0
 
+    # ------------------------
     # Metrics
+    # ------------------------
     col1, col2, col3, col4, col5 = st.columns(5)
 
     col1.metric(
@@ -140,7 +144,9 @@ try:
 
     st.markdown("---")
 
-    # Stock Health Score
+    # ------------------------
+    # Health Score
+    # ------------------------
     latest_close = hist["Close"].iloc[-1]
     first_close = hist["Close"].iloc[0]
 
@@ -154,26 +160,29 @@ try:
 
     st.write(f"Health Score: **{score}/100**")
 
-    # Risk
+    # ------------------------
+    # Risk Analysis
+    # ------------------------
     risk_level = calculate_risk(hist)
 
     st.subheader("⚠️ Risk Analysis")
-
     st.write(f"Risk Level: **{risk_level}**")
 
+    # ------------------------
     # AI Insight
+    # ------------------------
     st.subheader("🤖 AI Investment Insight")
 
     if return_pct > 15:
         insight = (
-            f"{company_name} has shown strong performance "
-            f"with a return of {return_pct:.2f}% during the selected period. "
+            f"{company_name} has shown strong performance with a "
+            f"return of {return_pct:.2f}% during the selected period. "
             f"The stock is demonstrating bullish momentum."
         )
     elif return_pct > 5:
         insight = (
-            f"{company_name} has delivered moderate gains "
-            f"of {return_pct:.2f}% during the selected period."
+            f"{company_name} has delivered moderate gains of "
+            f"{return_pct:.2f}% during the selected period."
         )
     elif return_pct > -5:
         insight = (
@@ -189,14 +198,18 @@ try:
 
     st.info(insight)
 
+    # ------------------------
     # Company Description
+    # ------------------------
     summary = info.get("longBusinessSummary", "")
 
     if summary:
         st.subheader("🏢 About the Company")
         st.write(summary[:700] + "...")
 
-    # Chart
+    # ------------------------
+    # Price Chart
+    # ------------------------
     st.subheader("📈 Stock Price Trend")
 
     fig = px.line(
@@ -206,32 +219,27 @@ try:
         title=f"{ticker_input} Price Trend"
     )
 
+    # Comparison Stock
     if compare_stock != "None":
 
-    compare_hist = yf.Ticker(compare_stock).history(period=period)
+        compare_hist = yf.Ticker(compare_stock).history(
+            period=period
+        )
 
-    fig.add_scatter(
-        x=compare_hist.index,
-        y=compare_hist["Close"],
-        mode="lines",
-        name=compare_stock
-    )
-    
-    fig.update_layout(
-    template="plotly_white",
-    height=600
-)
-    
-    fig.add_scatter(
-        x=compare_hist.index,
-        y=compare_hist["Close"],
-        mode="lines",
-        name=compare_stock
-    )
+        if not compare_hist.empty:
+
+            fig.add_scatter(
+                x=compare_hist.index,
+                y=compare_hist["Close"],
+                mode="lines",
+                name=compare_stock
+            )
 
     fig.update_layout(
         template="plotly_white",
-        height=600
+        height=600,
+        xaxis_title="Date",
+        yaxis_title="Price"
     )
 
     st.plotly_chart(
@@ -239,7 +247,9 @@ try:
         use_container_width=True
     )
 
-    # Data Table
+    # ------------------------
+    # Recent Data
+    # ------------------------
     st.subheader("📋 Recent Data")
 
     st.dataframe(
