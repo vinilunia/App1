@@ -1,16 +1,20 @@
 import streamlit as st
 import yfinance as yf
 import plotly.express as px
+import pandas as pd
 
 st.set_page_config(
-    page_title="Global Equity Explorer",
+    page_title="Stock Intelligence Platform",
     page_icon="📈",
     layout="wide"
 )
 
-st.title("📈 Global Equity Explorer")
-st.markdown("Track stocks worldwide using Yahoo Finance")
+st.title("📈 Stock Intelligence Platform")
+st.markdown("Helping retail investors make data-driven investment decisions.")
 
+# ------------------------
+# Suggested Stocks
+# ------------------------
 popular_stocks = {
     "Apple": "AAPL",
     "Microsoft": "MSFT",
@@ -24,6 +28,9 @@ popular_stocks = {
     "Infosys": "INFY.NS"
 }
 
+# ------------------------
+# Sidebar
+# ------------------------
 st.sidebar.header("Stock Selection")
 
 suggestion = st.sidebar.selectbox(
@@ -41,6 +48,34 @@ period = st.sidebar.selectbox(
     ["1mo", "3mo", "6mo", "1y", "5y"]
 )
 
+# ------------------------
+# Helper Functions
+# ------------------------
+def format_market_cap(value):
+    if isinstance(value, (int, float)):
+        if value >= 1_000_000_000_000:
+            return f"${value/1_000_000_000_000:.2f}T"
+        elif value >= 1_000_000_000:
+            return f"${value/1_000_000_000:.2f}B"
+        elif value >= 1_000_000:
+            return f"${value/1_000_000:.2f}M"
+    return "N/A"
+
+
+def calculate_risk(hist):
+    volatility = hist["Close"].pct_change().std()
+
+    if volatility < 0.015:
+        return "🟢 Low"
+    elif volatility < 0.03:
+        return "🟡 Medium"
+    else:
+        return "🔴 High"
+
+
+# ------------------------
+# Main App
+# ------------------------
 try:
     stock = yf.Ticker(ticker_input)
 
@@ -52,19 +87,21 @@ try:
     high_52 = info.get("fiftyTwoWeekHigh", "N/A")
     low_52 = info.get("fiftyTwoWeekLow", "N/A")
 
-    def format_market_cap(value):
-    if isinstance(value, (int, float)):
-        if value >= 1_000_000_000_000:
-            return f"${value/1_000_000_000_000:.2f}T"
-        elif value >= 1_000_000_000:
-            return f"${value/1_000_000_000:.2f}B"
-        elif value >= 1_000_000:
-            return f"${value/1_000_000:.2f}M"
-    return value
+    company_name = info.get("longName", ticker_input)
 
-    st.subheader(f"{info.get('longName', ticker_input)}")
+    st.subheader(company_name)
 
-    col1, col2, col3, col4 = st.columns(4)
+    # Daily Change %
+    if len(hist) > 1:
+        daily_change = (
+            (hist["Close"].iloc[-1] - hist["Close"].iloc[-2])
+            / hist["Close"].iloc[-2]
+        ) * 100
+    else:
+        daily_change = 0
+
+    # Metrics
+    col1, col2, col3, col4, col5 = st.columns(5)
 
     col1.metric(
         "Current Price",
@@ -72,21 +109,85 @@ try:
     )
 
     col2.metric(
-    "Market Cap",
-    format_market_cap(market_cap)
-)
+        "Daily Change %",
+        f"{daily_change:.2f}%"
+    )
 
     col3.metric(
+        "Market Cap",
+        format_market_cap(market_cap)
+    )
+
+    col4.metric(
         "52W High",
         high_52
     )
 
-    col4.metric(
+    col5.metric(
         "52W Low",
         low_52
     )
 
     st.markdown("---")
+
+    # Stock Health Score
+    latest_close = hist["Close"].iloc[-1]
+    first_close = hist["Close"].iloc[0]
+
+    return_pct = ((latest_close - first_close) / first_close) * 100
+
+    score = max(min(int(return_pct + 50), 100), 0)
+
+    st.subheader("📊 Stock Health Score")
+
+    st.progress(score)
+
+    st.write(f"Health Score: **{score}/100**")
+
+    # Risk
+    risk_level = calculate_risk(hist)
+
+    st.subheader("⚠️ Risk Analysis")
+
+    st.write(f"Risk Level: **{risk_level}**")
+
+    # AI Insight
+    st.subheader("🤖 AI Investment Insight")
+
+    if return_pct > 15:
+        insight = (
+            f"{company_name} has shown strong performance "
+            f"with a return of {return_pct:.2f}% during the selected period. "
+            f"The stock is demonstrating bullish momentum."
+        )
+    elif return_pct > 5:
+        insight = (
+            f"{company_name} has delivered moderate gains "
+            f"of {return_pct:.2f}% during the selected period."
+        )
+    elif return_pct > -5:
+        insight = (
+            f"{company_name} has traded relatively sideways "
+            f"during the selected period."
+        )
+    else:
+        insight = (
+            f"{company_name} has declined by "
+            f"{abs(return_pct):.2f}% during the selected period. "
+            f"Investors should analyze the reasons carefully."
+        )
+
+    st.info(insight)
+
+    # Company Description
+    summary = info.get("longBusinessSummary", "")
+
+    if summary:
+        st.subheader("🏢 About the Company")
+        st.write(summary[:700] + "...")
+
+    # Chart
+    st.subheader("📈 Stock Price Trend")
 
     fig = px.line(
         hist,
@@ -96,8 +197,6 @@ try:
     )
 
     fig.update_layout(
-        xaxis_title="Date",
-        yaxis_title="Price",
         template="plotly_white",
         height=600
     )
@@ -107,7 +206,8 @@ try:
         use_container_width=True
     )
 
-    st.subheader("Recent Data")
+    # Data Table
+    st.subheader("📋 Recent Data")
 
     st.dataframe(
         hist.tail(10),
